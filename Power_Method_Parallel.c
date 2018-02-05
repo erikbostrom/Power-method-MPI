@@ -13,7 +13,6 @@ Erik Boström, erikbos@kth.se
 #include <stdio.h>
 #include <math.h>
 #include <mpi.h>
-#include "linalg.h"
 
 #define N 500
 #define PR 5
