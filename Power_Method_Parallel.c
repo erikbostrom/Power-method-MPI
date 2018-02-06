@@ -83,8 +83,8 @@ int main(int argc, char *argv[]){
   int N;
   int N_iter;
 
-  MPI_Status status;   // store status of a MPI_Recv
-  MPI_Request request; // capture request of a MPI_Isend
+  MPI_Status  status[4];  // store status of a MPI_Recv
+  MPI_Request request[4]; // capture request of a MPI_Isend
   
   /* Initialize MPI */
   MPI_Init(&argc, &argv);
@@ -151,20 +151,18 @@ int main(int argc, char *argv[]){
       
       /* Send out lower and upper bounds and the full  x vector to the slave processors */
       /* We use three tags, one for lower bound, one for upper bound and one for the partition of the A matrix. */
-      MPI_Isend(&lower[i], 1, MPI_INT, i, MASTER_TO_SLAVE_TAG,   MPI_COMM_WORLD, &request);
-      MPI_Isend(&upper[i], 1, MPI_INT, i, MASTER_TO_SLAVE_TAG+1, MPI_COMM_WORLD, &request);
-      MPI_Isend(&A[lower[i]*N], (upper[i]-lower[i])*N, MPI_DOUBLE, i, MASTER_TO_SLAVE_TAG+2, MPI_COMM_WORLD, &request);
-      MPI_Isend(b, N, MPI_DOUBLE, i, 0, MPI_COMM_WORLD,&request);
+      MPI_Isend(&lower[i], 1, MPI_INT, i, MASTER_TO_SLAVE_TAG,   MPI_COMM_WORLD, &request[0]);
+      MPI_Isend(&upper[i], 1, MPI_INT, i, MASTER_TO_SLAVE_TAG+1, MPI_COMM_WORLD, &request[1]);
+      MPI_Isend(&A[lower[i]*N], (upper[i]-lower[i])*N, MPI_DOUBLE, i, MASTER_TO_SLAVE_TAG+2, MPI_COMM_WORLD, &request[2]);
+      MPI_Send(b, N, MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
     }
   } else{
 
     /* Each slave recieves the partition bound information */
-    MPI_Recv(&loc_lower, 1, MPI_INT, 0, MASTER_TO_SLAVE_TAG,   MPI_COMM_WORLD, &status);
-    MPI_Recv(&loc_upper, 1, MPI_INT, 0, MASTER_TO_SLAVE_TAG+1, MPI_COMM_WORLD, &status);
-    MPI_Recv(&A[loc_lower*N], (loc_upper-loc_lower)*N, MPI_DOUBLE, 0, MASTER_TO_SLAVE_TAG+2, MPI_COMM_WORLD, &status);
+    MPI_Recv(&loc_lower, 1, MPI_INT, 0, MASTER_TO_SLAVE_TAG,   MPI_COMM_WORLD, &status[0]);
+    MPI_Recv(&loc_upper, 1, MPI_INT, 0, MASTER_TO_SLAVE_TAG+1, MPI_COMM_WORLD, &status[1]);
+    MPI_Recv(&A[loc_lower*N], (loc_upper-loc_lower)*N, MPI_DOUBLE, 0, MASTER_TO_SLAVE_TAG+2, MPI_COMM_WORLD, &status[2]);
   }
-  MPI_Barrier(MPI_COMM_WORLD);
-
   
   /***************************************************************************
    Main loop
@@ -173,7 +171,7 @@ int main(int argc, char *argv[]){
     if (p>0){
       
       /* Each slave recieves the b vector */
-      MPI_Recv(b, N, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status);
+      MPI_Recv(b, N, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status[3]);
             
       /* Compute in parallel, then send result to master */
       Ab_norm2_p = 0.0;
@@ -197,9 +195,9 @@ int main(int argc, char *argv[]){
       for (i = 1; i < P; i++) {
       
   	/* Recieve computed data from the slaves */
-  	MPI_Recv(&Ab[lower[i]], upper[i]-lower[i], MPI_DOUBLE, i, SLAVE_TO_MASTER_TAG, MPI_COMM_WORLD, &status);
-  	MPI_Recv(&Ab_norm2_p, 1, MPI_DOUBLE, i, SLAVE_TO_MASTER_TAG+1, MPI_COMM_WORLD, &status);
-  	MPI_Recv(&b_dot_Ab_p, 1, MPI_DOUBLE, i, SLAVE_TO_MASTER_TAG+2, MPI_COMM_WORLD, &status);
+  	MPI_Recv(&Ab[lower[i]], upper[i]-lower[i], MPI_DOUBLE, i, SLAVE_TO_MASTER_TAG, MPI_COMM_WORLD, &status[0]);
+  	MPI_Recv(&Ab_norm2_p, 1, MPI_DOUBLE, i, SLAVE_TO_MASTER_TAG+1, MPI_COMM_WORLD, &status[1]);
+  	MPI_Recv(&b_dot_Ab_p, 1, MPI_DOUBLE, i, SLAVE_TO_MASTER_TAG+2, MPI_COMM_WORLD, &status[2]);
 
   	Ab_norm2 += Ab_norm2_p;
   	b_dot_Ab += b_dot_Ab_p;
@@ -217,9 +215,11 @@ int main(int argc, char *argv[]){
       printf("\nIteration %4d:",it+1);
       printf("    ||abs-err|| = %e;    eig-max = %e",err,b_dot_Ab);
 
-      for (i = 1; i < P; i++) {
-  	/* Send partition of b to slaves */
-  	MPI_Isend(b, N, MPI_DOUBLE, i, 0, MPI_COMM_WORLD,&request);
+      if (it != N_iter-1){
+	for (i = 1; i < P; i++) {
+	  /* Send partition of b to slaves */
+	  MPI_Send(b, N, MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+	}
       }
     }
   }
