@@ -171,7 +171,7 @@ int main(int argc, char *argv[]){
     if (p>0){
       
       /* Each slave recieves the b vector */
-      MPI_Recv(b, N, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status[3]);
+      MPI_Recv(b, N, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status[0]);
             
       /* Compute in parallel, then send result to master */
       Ab_norm2_p = 0.0;
@@ -195,12 +195,14 @@ int main(int argc, char *argv[]){
       for (i = 1; i < P; i++) {
       
   	/* Recieve computed data from the slaves */
-  	MPI_Recv(&Ab[lower[i]], upper[i]-lower[i], MPI_DOUBLE, i, SLAVE_TO_MASTER_TAG, MPI_COMM_WORLD, &status[0]);
+  	MPI_Irecv(&Ab[lower[i]], upper[i]-lower[i], MPI_DOUBLE, i, SLAVE_TO_MASTER_TAG, MPI_COMM_WORLD, &request[3]);
   	MPI_Recv(&Ab_norm2_p, 1, MPI_DOUBLE, i, SLAVE_TO_MASTER_TAG+1, MPI_COMM_WORLD, &status[1]);
   	MPI_Recv(&b_dot_Ab_p, 1, MPI_DOUBLE, i, SLAVE_TO_MASTER_TAG+2, MPI_COMM_WORLD, &status[2]);
 
   	Ab_norm2 += Ab_norm2_p;
   	b_dot_Ab += b_dot_Ab_p;
+
+	MPI_Wait(&request[3], &status[3]);
       }
       Ab_norm2 = sqrt(Ab_norm2);
       
@@ -225,9 +227,7 @@ int main(int argc, char *argv[]){
   }
   if (p==0) printf("\n-----------------------\nEnd of program\n\n");
   
-  //  printout(A,x,y); // Print out results of the iter
   MPI_Finalize();
-
   free(A); free(b); free(b_new); free(diff); free(Ab);
   free(lower); free(upper);
   return 0;
