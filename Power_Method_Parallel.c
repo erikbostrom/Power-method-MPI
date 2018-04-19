@@ -6,7 +6,7 @@ using MPI (Message Passing Interface)
 argv[1] -> vector size, N
 argv[2] -> number of iterations, N_iter
 
-Erik Boström, erikbos@kth.se
+Erik BostrÃ¶m, erikbos@kth.se
 
 ***********************************************************/
 
@@ -60,7 +60,7 @@ void genStocA(double *A, int N){
 ***********************************************************/
 int main(int argc, char *argv[]){
 
-  /* Heap variables*/
+  /* Pointers*/
   double *A;
   double *b;
   double *b_new;
