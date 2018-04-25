@@ -18,13 +18,13 @@ Erik Boström, erikbos@kth.se
 #define MASTER_TO_SLAVE_TAG 1
 #define SLAVE_TO_MASTER_TAG 4
 
-void genx(double *x, int N){
+void genx(double* x, int N){
   for(int i=0; i<N; i++) {
     x[i] = 1;
   }
 }
 
-void genA(double *A, int N){
+void genA(double* A, int N){
   /* Generates a matrix with user defined values */
   for(int i=0; i<N; i++) {
     for(int j=0; j<N; j++) {
@@ -44,7 +44,7 @@ void genA(double *A, int N){
   /* A[2][2] = 5; */      
 }
 
-void genStocA(double *A, int N){
+void genStocA(double* A, int N){
   
   /* Generates a stochastic matrix */
   for(int i=0; i<N; i++) {
@@ -58,7 +58,7 @@ void genStocA(double *A, int N){
 /**********************************************************
  Main program
 ***********************************************************/
-int main(int argc, char *argv[]){
+int main(int argc, char* argv[]){
 
   /* Pointers*/
   double* A;
