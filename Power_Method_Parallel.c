@@ -61,15 +61,15 @@ void genStocA(double *A, int N){
 int main(int argc, char *argv[]){
 
   /* Pointers*/
-  double *A;
-  double *b;
-  double *b_new;
-  double *Ab;
-  double *diff;
-  int    *lower;
-  int    *upper;
+  double* A;
+  double* b;
+  double* b_new;
+  double* Ab;
+  double* diff;
+  int* lower;
+  int* upper;
   
-  /* Stack variables*/
+  /* Local variables*/
   double err;
   double Ab_norm2;
   double Ab_norm2_p;
@@ -228,7 +228,6 @@ int main(int argc, char *argv[]){
   if (p==0) printf("\n-----------------------\nEnd of program\n\n");
   
   MPI_Finalize();
-  free(A); free(b); free(b_new); free(diff); free(Ab);
-  free(lower); free(upper);
+  free(A); free(b); free(b_new); free(diff); free(Ab); free(lower); free(upper);
   return 0;
 }
